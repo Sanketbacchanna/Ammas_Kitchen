@@ -1,0 +1,111 @@
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { CartProvider } from './context/CartContext';
+import { InstallProvider } from './context/InstallContext';
+import ErrorBoundary from './components/ErrorBoundary';
+import Layout from './components/Layout';
+import Home from './pages/Home';
+import Menu from './pages/Menu';
+import Cart from './pages/Cart';
+import Login from './pages/Login';
+import Signup from './pages/Signup';
+import Checkout from './pages/Checkout';
+import OrderSuccess from './pages/OrderSuccess';
+import About from './pages/About';
+import Profile from './pages/Profile';
+import InstallPrompt from './components/InstallPrompt';
+import ForgotPassword from './pages/ForgotPassword';
+import ReloadPrompt from './components/ReloadPrompt';
+import CheesyNotification from './components/CheesyNotification';
+
+// Protected Route Component
+const ProtectedRoute = ({ children }) => {
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-2xl text-gray-600">Loading...</div>
+      </div>
+    );
+  }
+
+  return isAuthenticated ? children : <Navigate to="/login" />;
+};
+
+
+
+function AppContent() {
+  return (
+    <Router basename={import.meta.env.BASE_URL}>
+      <InstallPrompt />
+      <ReloadPrompt />
+      <CheesyNotification />
+      <Routes>
+        {/* Auth Routes (No Layout) */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+
+        {/* Main Routes (With Layout) */}
+        <Route path="/" element={<Layout />}>
+          <Route index element={<Home />} />
+          <Route path="menu" element={<Menu />} />
+          <Route path="about" element={<About />} />
+          <Route path="cart" element={<Cart />} />
+          <Route
+            path="checkout"
+            element={
+              <ProtectedRoute>
+                <Checkout />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="order-success"
+            element={
+              <ProtectedRoute>
+                <OrderSuccess />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="*" element={
+            <div className="flex items-center justify-center min-h-screen">
+              <div className="text-center">
+                <h1 className="text-6xl font-bold text-gray-800 mb-4">404</h1>
+                <p className="text-xl text-gray-600">Page Not Found</p>
+              </div>
+            </div>
+          } />
+        </Route>
+      </Routes>
+    </Router>
+  );
+}
+
+
+
+function App() {
+  return (
+    <ErrorBoundary>
+      <AuthProvider>
+        <CartProvider>
+          <InstallProvider>
+            <AppContent />
+          </InstallProvider>
+        </CartProvider>
+      </AuthProvider>
+    </ErrorBoundary>
+  );
+}
+
+export default App;
