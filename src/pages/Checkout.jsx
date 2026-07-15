@@ -40,9 +40,9 @@ const Checkout = () => {
             `*Order Summary:*%0a${itemsList}%0a%0a` +
             `--------------------------------%0a` +
             `Subtotal: ₹${subtotal}%0a` +
-            `Tax: ₹${tax}%0a` +
+            `Tax: ₹${typeof tax === 'number' ? tax.toFixed(2) : tax}%0a` +
             `Delivery: ${delivery === 0 ? 'Free' : '₹' + delivery}%0a` +
-            `*Total Amount: ₹${total}* 💰%0a` +
+            `*Total Amount: ₹${typeof total === 'number' ? total.toFixed(2) : total}* 💰%0a` +
             `--------------------------------%0a` +
             `Payment Method: ${formData.paymentMethod === 'upi' ? 'UPI' : 'Cash on Delivery'}%0a` +
             `%0aPlease confirm this order!`;
