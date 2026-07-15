@@ -1,10 +1,10 @@
-# 🥗 Sanket's Veg Kitchen
+# 🥗 Amma's Kitchen
 
 A modern and responsive vegetarian restaurant website built using **React** and **Vite**. The application provides an attractive user interface for exploring delicious vegetarian dishes, restaurant information, and an easy-to-use browsing experience.
 
 ## 🚀 Live Demo
 
-🌐 **Website:** https://sankets-veg-kitchen.netlify.app/
+🌐 **Website:** https://ammaskitchens.netlify.app/
 
 ## ✨ Features
 
