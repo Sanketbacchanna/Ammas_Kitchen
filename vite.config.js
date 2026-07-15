@@ -14,9 +14,9 @@ export default defineConfig({
             },
             includeAssets: ['icon-192x192.png', 'icon-512x512.png', 'apple-touch-icon.png'],
             manifest: {
-                name: 'Sanket\'s Green Kitchen',
-                short_name: 'Sanket\'s Green',
-                description: 'Order delicious vegetarian food from Sanket\'s Green Kitchen',
+                name: 'Amma\'s Kitchen',
+                short_name: 'Amma\'s Kitchen',
+                description: 'Order delicious vegetarian food from Amma\'s Kitchen',
                 theme_color: '#2ecc71',
                 background_color: '#1a1a1a',
                 display: 'standalone',

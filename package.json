@@ -1,8 +1,8 @@
 {
-  "name": "nikiths-veg-kitchen",
+  "name": "Amma's Kitchen",
   "private": true,
   "version": "0.0.3",
-  "homepage": "https://Asif-Shaik-10.github.io/shaiks-kabab-biriyani",
+  "homepage": "https://Sanketbacchanna.github.io/Ammas-kitchen",
   "type": "module",
   "scripts": {
     "dev": "vite",
