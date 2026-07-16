@@ -64,6 +64,14 @@ export const AuthProvider = ({ children }) => {
             return { success: false, error: 'User already exists' };
         }
 
+        // Check if an admin already exists (only 1 admin allowed)
+        if (userData.role === 'admin') {
+            const adminExists = users.find(u => u.role === 'admin');
+            if (adminExists) {
+                return { success: false, error: 'An admin account already exists. Only one admin is allowed.' };
+            }
+        }
+
         const newUser = {
             id: Date.now(),
             ...userData,
