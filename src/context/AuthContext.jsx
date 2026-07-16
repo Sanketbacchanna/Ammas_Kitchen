@@ -67,6 +67,7 @@ export const AuthProvider = ({ children }) => {
         const newUser = {
             id: Date.now(),
             ...userData,
+            role: userData.role || 'customer',
             createdAt: new Date().toISOString()
         };
 

@@ -20,8 +20,10 @@ import ForgotPassword from './pages/ForgotPassword';
 import ReloadPrompt from './components/ReloadPrompt';
 import CheesyNotification from './components/CheesyNotification';
 import AdminDashboard from './pages/AdminDashboard';
+import AdminLogin from './pages/AdminLogin';
+import AdminSignup from './pages/AdminSignup';
 
-// Protected Route Component
+// Protected Route Component (For regular users)
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
 
@@ -36,7 +38,20 @@ const ProtectedRoute = ({ children }) => {
   return isAuthenticated ? children : <Navigate to="/login" />;
 };
 
+// Admin Protected Route Component (For admins only)
+const AdminProtectedRoute = ({ children }) => {
+  const { user, isAuthenticated, loading } = useAuth();
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-2xl text-gray-600">Loading...</div>
+      </div>
+    );
+  }
+
+  return isAuthenticated && user?.role === 'admin' ? children : <Navigate to="/admin-login" />;
+};
 
 function AppContent() {
   return (
@@ -49,6 +64,8 @@ function AppContent() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/admin-login" element={<AdminLogin />} />
+        <Route path="/admin-signup" element={<AdminSignup />} />
 
         {/* Main Routes (With Layout) */}
         <Route path="/" element={<Layout />}>
@@ -83,9 +100,9 @@ function AppContent() {
           <Route
             path="admin"
             element={
-              <ProtectedRoute>
+              <AdminProtectedRoute>
                 <AdminDashboard />
-              </ProtectedRoute>
+              </AdminProtectedRoute>
             }
           />
           <Route path="*" element={
@@ -101,8 +118,6 @@ function AppContent() {
     </Router>
   );
 }
-
-
 
 function App() {
   return (
