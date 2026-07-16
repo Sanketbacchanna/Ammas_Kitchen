@@ -11,7 +11,7 @@ const AdminSignup = () => {
     const { signup } = useAuth();
     const navigate = useNavigate();
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
 
@@ -20,7 +20,7 @@ const AdminSignup = () => {
             return;
         }
 
-        const result = signup({
+        const result = await signup({
             name: formData.name,
             email: formData.email,
             password: formData.password,

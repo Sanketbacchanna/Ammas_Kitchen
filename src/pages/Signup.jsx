@@ -17,7 +17,7 @@ const Signup = () => {
     const { signup } = useAuth();
     const navigate = useNavigate();
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
 
@@ -31,7 +31,7 @@ const Signup = () => {
             return;
         }
 
-        const result = signup(formData);
+        const result = await signup(formData);
         if (result.success) {
             navigate('/');
         } else {

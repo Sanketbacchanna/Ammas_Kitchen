@@ -22,7 +22,7 @@ const ForgotPassword = () => {
         setStep(2);
     };
 
-    const handlePasswordReset = (e) => {
+    const handlePasswordReset = async (e) => {
         e.preventDefault();
         setError('');
 
@@ -36,7 +36,7 @@ const ForgotPassword = () => {
             return;
         }
 
-        const result = resetPassword(email, newPassword);
+        const result = await resetPassword(email, newPassword);
         if (result.success) {
             setStep(3);
             setTimeout(() => navigate('/login'), 3000);

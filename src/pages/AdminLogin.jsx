@@ -11,19 +11,18 @@ const AdminLogin = () => {
     const { login, user } = useAuth();
     const navigate = useNavigate();
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
 
-        const result = login(formData.email, formData.password);
+        const result = await login(formData.email, formData.password);
         if (result.success) {
-            // Check if the user is actually an admin (after login updates state, we might need to rely on the returned user, but AuthContext sets it async. We'll get it from localStorage)
+            // Check if the user is actually an admin
             const savedUser = JSON.parse(localStorage.getItem('user'));
             if (savedUser && savedUser.role === 'admin') {
                 navigate('/admin');
             } else {
                 setError('Access denied. You do not have administrator privileges.');
-                // We should probably log them out if they tried to login as admin but aren't
             }
         } else {
             setError(result.error);

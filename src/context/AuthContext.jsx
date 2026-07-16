@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '../supabase';
 
 const AuthContext = createContext();
 
@@ -15,7 +16,7 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Check if user is logged in (from localStorage)
+        // Keep current logged-in user session from localStorage
         const savedUser = localStorage.getItem('user');
         if (savedUser) {
             try {
@@ -28,59 +29,62 @@ export const AuthProvider = ({ children }) => {
         setLoading(false);
     }, []);
 
-    const login = (email, password) => {
-        // Demo login - in production, this would call an API
-        let users = [];
-        try {
-            users = JSON.parse(localStorage.getItem('users') || '[]');
-        } catch (error) {
-            console.error('Failed to parse users from local storage:', error);
-            users = [];
-        }
-        const foundUser = users.find(u => u.email === email && u.password === password);
+    const login = async (email, password) => {
+        const { data, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('email', email)
+            .eq('password', password)
+            .single();
 
-        if (foundUser) {
-            const userWithoutPassword = { ...foundUser };
-            delete userWithoutPassword.password;
-            setUser(userWithoutPassword);
-            localStorage.setItem('user', JSON.stringify(userWithoutPassword));
-            return { success: true };
+        if (error || !data) {
+            return { success: false, error: 'Invalid email or password' };
         }
-        return { success: false, error: 'Invalid email or password' };
+
+        const userWithoutPassword = { ...data };
+        delete userWithoutPassword.password;
+        setUser(userWithoutPassword);
+        localStorage.setItem('user', JSON.stringify(userWithoutPassword));
+        return { success: true };
     };
 
-    const signup = (userData) => {
-        // Demo signup - in production, this would call an API
-        let users = [];
-        try {
-            users = JSON.parse(localStorage.getItem('users') || '[]');
-        } catch (error) {
-            console.error('Failed to parse users from local storage:', error);
-            users = [];
-        }
-
+    const signup = async (userData) => {
         // Check if user already exists
-        if (users.find(u => u.email === userData.email)) {
+        const { data: existingUser } = await supabase
+            .from('users')
+            .select('email')
+            .eq('email', userData.email);
+
+        if (existingUser && existingUser.length > 0) {
             return { success: false, error: 'User already exists' };
         }
 
-        // Check if an admin already exists (only 1 admin allowed)
+        // Check if an admin already exists
         if (userData.role === 'admin') {
-            const adminExists = users.find(u => u.role === 'admin');
-            if (adminExists) {
+            const { data: adminExists } = await supabase
+                .from('users')
+                .select('role')
+                .eq('role', 'admin');
+            
+            if (adminExists && adminExists.length > 0) {
                 return { success: false, error: 'An admin account already exists. Only one admin is allowed.' };
             }
         }
 
         const newUser = {
             id: Date.now(),
-            ...userData,
-            role: userData.role || 'customer',
-            createdAt: new Date().toISOString()
+            name: userData.name,
+            email: userData.email,
+            password: userData.password,
+            role: userData.role || 'customer'
         };
 
-        users.push(newUser);
-        localStorage.setItem('users', JSON.stringify(users));
+        const { error } = await supabase.from('users').insert([newUser]);
+        
+        if (error) {
+            console.error("Database Error:", error.message);
+            return { success: false, error: 'Failed to create user in database' };
+        }
 
         const userWithoutPassword = { ...newUser };
         delete userWithoutPassword.password;
@@ -95,23 +99,25 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem('user');
     };
 
-    const resetPassword = (email, newPassword) => {
-        let users = [];
-        try {
-            users = JSON.parse(localStorage.getItem('users') || '[]');
-        } catch (error) {
-            console.error('Failed to parse users:', error);
-            return { success: false, error: 'System error' };
-        }
+    const resetPassword = async (email, newPassword) => {
+        const { data: existingUser } = await supabase
+            .from('users')
+            .select('id')
+            .eq('email', email);
 
-        const userIndex = users.findIndex(u => u.email === email);
-        if (userIndex === -1) {
+        if (!existingUser || existingUser.length === 0) {
             return { success: false, error: 'Email not found' };
         }
 
-        // Update password
-        users[userIndex].password = newPassword;
-        localStorage.setItem('users', JSON.stringify(users));
+        const { error } = await supabase
+            .from('users')
+            .update({ password: newPassword })
+            .eq('email', email);
+
+        if (error) {
+            console.error("Database Error:", error.message);
+            return { success: false, error: 'System error updating password' };
+        }
 
         return { success: true };
     };

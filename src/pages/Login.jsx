@@ -11,11 +11,11 @@ const Login = () => {
     const { login } = useAuth();
     const navigate = useNavigate();
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
 
-        const result = login(formData.email, formData.password);
+        const result = await login(formData.email, formData.password);
         if (result.success) {
             navigate('/');
         } else {
