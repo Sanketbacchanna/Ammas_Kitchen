@@ -53,13 +53,15 @@ const Checkout = () => {
         // 3. Create WhatsApp URL
         const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;
 
-        // 4. Redirect
-        window.location.href = whatsappUrl;
+        // 4. Save delivery address for tracking
+        localStorage.setItem('lastDeliveryAddress', formData.address);
 
-        // Optionally clear cart after a delay or let them clear it manually after returning
-        setTimeout(() => {
-            clearCart();
-        }, 2000);
+        // 5. Open WhatsApp in a new tab
+        window.open(whatsappUrl, '_blank');
+
+        // 6. Navigate to success page
+        clearCart();
+        navigate('/order-success', { state: { orderId: 'ORD-' + Math.floor(Math.random() * 1000000) } });
     };
 
     if (cartItems.length === 0) {

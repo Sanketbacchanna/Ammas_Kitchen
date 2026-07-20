@@ -7,6 +7,7 @@ const AdminDashboard = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [isAdding, setIsAdding] = useState(false);
     const [currentItem, setCurrentItem] = useState(null);
+    const [restaurantAddress, setRestaurantAddress] = useState(() => localStorage.getItem('restaurantAddress') || 'Amma\'s Kitchen, Mumbai');
 
     // Initial state for new item
     const initialItemState = {
@@ -63,6 +64,11 @@ const AdminDashboard = () => {
         }));
     };
 
+    const handleSaveAddress = () => {
+        localStorage.setItem('restaurantAddress', restaurantAddress);
+        alert('Restaurant address saved successfully!');
+    };
+
     return (
         <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
             <div className="max-w-6xl mx-auto">
@@ -74,6 +80,29 @@ const AdminDashboard = () => {
                     >
                         <Plus size={20} /> Add New Item
                     </button>
+                </div>
+
+                {/* Restaurant Settings */}
+                <div className="bg-white p-6 rounded-xl shadow-md mb-8 border border-gray-200">
+                    <h2 className="text-xl font-bold text-gray-900 mb-4">Restaurant Settings</h2>
+                    <div className="flex gap-4 items-end">
+                        <div className="flex-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Restaurant Address</label>
+                            <input 
+                                type="text" 
+                                value={restaurantAddress} 
+                                onChange={(e) => setRestaurantAddress(e.target.value)} 
+                                className="w-full p-2 border border-gray-300 rounded-lg text-gray-900 bg-white" 
+                                placeholder="Enter the exact restaurant address"
+                            />
+                        </div>
+                        <button 
+                            onClick={handleSaveAddress}
+                            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                        >
+                            <Save size={20} /> Save Address
+                        </button>
+                    </div>
                 </div>
 
                 {/* Form Modal (simplified as in-page for now) */}

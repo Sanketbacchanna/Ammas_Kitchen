@@ -3,7 +3,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
 import 'leaflet-routing-machine';
-import { MapPin, Navigation, Loader2 } from 'lucide-react';
+import { MapPin, Navigation, Loader2, Home, Store } from 'lucide-react';
 
 // Fix Leaflet's default icon issue
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -28,10 +28,11 @@ const LocationTracker = () => {
   const mapInstance = useRef(null);
   const routingControl = useRef(null);
   
-  const [currentLocation, setCurrentLocation] = useState(null);
-  const [destinationStr, setDestinationStr] = useState('');
+  const [startStr, setStartStr] = useState(() => localStorage.getItem('restaurantAddress') || 'Amma\'s Kitchen, Mumbai');
+  const [destinationStr, setDestinationStr] = useState(() => localStorage.getItem('lastDeliveryAddress') || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [isAutoTracking, setIsAutoTracking] = useState(false);
 
   useEffect(() => {
     if (!mapRef.current) return;
@@ -43,46 +44,23 @@ const LocationTracker = () => {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(mapInstance.current);
 
+    // If both addresses are present in localStorage, trigger auto track
+    const savedStart = localStorage.getItem('restaurantAddress') || 'Amma\'s Kitchen, Mumbai';
+    const savedDest = localStorage.getItem('lastDeliveryAddress');
+    
+    if (savedStart && savedDest) {
+      setIsAutoTracking(true);
+      performTracking(savedStart, savedDest).finally(() => {
+        setIsAutoTracking(false);
+      });
+    }
+
     return () => {
       if (mapInstance.current) {
         mapInstance.current.remove();
       }
     };
   }, []);
-
-  const getCurrentLocation = () => {
-    setLoading(true);
-    setError(null);
-    if ('geolocation' in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          setCurrentLocation(L.latLng(latitude, longitude));
-          setLoading(false);
-          
-          if (mapInstance.current) {
-            mapInstance.current.setView([latitude, longitude], 13);
-            
-            // Add a marker for current location if routing is not active
-            if (!routingControl.current) {
-              L.marker([latitude, longitude], { icon: DefaultIcon })
-                .addTo(mapInstance.current)
-                .bindPopup('Your Current Location')
-                .openPopup();
-            }
-          }
-        },
-        (error) => {
-          console.error("Error getting location:", error);
-          setError("Could not get your location. Please ensure location services are enabled.");
-          setLoading(false);
-        }
-      );
-    } else {
-      setError("Geolocation is not supported by your browser");
-      setLoading(false);
-    }
-  };
 
   const geocodeAddress = async (address) => {
     try {
@@ -98,24 +76,15 @@ const LocationTracker = () => {
     }
   };
 
-  const handleTrack = async (e) => {
-    e.preventDefault();
-    if (!currentLocation) {
-      setError("Please get your current location first.");
-      return;
-    }
-    if (!destinationStr.trim()) {
-      setError("Please enter a destination.");
-      return;
-    }
-
+  const performTracking = async (startAddr, destAddr) => {
     setLoading(true);
     setError(null);
 
-    const destLatLng = await geocodeAddress(destinationStr);
+    const startLatLng = await geocodeAddress(startAddr);
+    const destLatLng = await geocodeAddress(destAddr);
 
-    if (!destLatLng) {
-      setError("Could not find the destination address. Please try a different one.");
+    if (!startLatLng || !destLatLng) {
+      setError("Could not find one or both addresses. Please try different ones.");
       setLoading(false);
       return;
     }
@@ -126,57 +95,72 @@ const LocationTracker = () => {
 
     routingControl.current = L.Routing.control({
       waypoints: [
-        currentLocation,
+        startLatLng,
         destLatLng
       ],
       routeWhileDragging: true,
       lineOptions: {
-        styles: [{ color: '#f97316', weight: 4 }] // Orange color
+        styles: [{ color: '#3b82f6', weight: 6, opacity: 0.8 }] // Blue route color similar to standard maps
       },
-      show: true,
+      show: true, // show turn-by-turn instructions
       createMarker: function(i, wp, nWps) {
+        // Create custom markers for start and end
+        let popupContent = i === 0 ? "<b>Restaurant (Start)</b>" : "<b>Delivery Location (Home)</b>";
+        
         return L.marker(wp.latLng, {
-          draggable: true,
+          draggable: false,
           icon: DefaultIcon
-        });
+        }).bindPopup(popupContent);
       }
     }).addTo(mapInstance.current);
 
+    // Fit map to route bounds
+    const bounds = L.latLngBounds([startLatLng, destLatLng]);
+    mapInstance.current.fitBounds(bounds, { padding: [50, 50] });
+
     setLoading(false);
+  };
+
+  const handleTrack = async (e) => {
+    e.preventDefault();
+    
+    if (!startStr.trim() || !destinationStr.trim()) {
+      setError("Please enter both starting and destination addresses.");
+      return;
+    }
+
+    await performTracking(startStr, destinationStr);
   };
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
       <h1 className="text-3xl font-bold text-gray-100 mb-6 flex items-center gap-2">
         <Navigation className="text-primary" />
-        Track Location
+        Track Your Order
       </h1>
 
       <div className="bg-dark-lighter rounded-2xl shadow-xl overflow-hidden flex flex-col md:flex-row h-[700px] border border-gray-800">
         {/* Sidebar */}
         <div className="w-full md:w-1/3 p-6 bg-dark border-r border-gray-800 flex flex-col">
-          <h2 className="text-xl font-bold text-gray-200 mb-6">Find Your Route</h2>
+          <h2 className="text-xl font-bold text-gray-200 mb-6">Route Details</h2>
           
-          <div className="space-y-4 mb-6">
-            <button
-              onClick={getCurrentLocation}
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-2 bg-dark-lighter border border-gray-700 hover:border-primary text-gray-200 font-semibold py-3 px-4 rounded-xl transition-all shadow-sm hover:shadow-md cursor-pointer"
-            >
-              {loading && !currentLocation ? <Loader2 className="w-5 h-5 animate-spin" /> : <MapPin className="w-5 h-5" />}
-              {currentLocation ? "Location Acquired" : "Get Current Location"}
-            </button>
-            {currentLocation && (
-              <p className="text-xs text-green-400 font-medium text-center">
-                Lat: {currentLocation.lat.toFixed(4)}, Lng: {currentLocation.lng.toFixed(4)}
-              </p>
-            )}
-          </div>
-
           <form onSubmit={handleTrack} className="flex flex-col flex-1">
             <div className="mb-4">
-              <label className="block text-sm font-semibold text-gray-300 mb-2">
-                Destination Address
+              <label className="flex items-center gap-2 text-sm font-semibold text-gray-300 mb-2">
+                <Store size={16} className="text-blue-400" /> Restaurant Address (Start)
+              </label>
+              <input
+                type="text"
+                value={startStr}
+                onChange={(e) => setStartStr(e.target.value)}
+                placeholder="e.g. Amma's Kitchen, Mumbai"
+                className="w-full px-4 py-3 rounded-xl border border-gray-700 bg-dark-lighter text-light focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+              />
+            </div>
+            
+            <div className="mb-6">
+              <label className="flex items-center gap-2 text-sm font-semibold text-gray-300 mb-2">
+                <Home size={16} className="text-orange-400" /> Delivery Address (Destination)
               </label>
               <input
                 type="text"
@@ -195,11 +179,11 @@ const LocationTracker = () => {
 
             <button
               type="submit"
-              disabled={loading || !currentLocation || !destinationStr}
+              disabled={loading || isAutoTracking || !startStr || !destinationStr}
               className="mt-auto w-full bg-primary hover:bg-red-700 text-white font-bold py-4 px-6 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
-              {loading && currentLocation && destinationStr ? <Loader2 className="w-5 h-5 animate-spin" /> : <Navigation className="w-5 h-5" />}
-              Track Route
+              {(loading || isAutoTracking) ? <Loader2 className="w-5 h-5 animate-spin" /> : <Navigation className="w-5 h-5" />}
+              {isAutoTracking ? 'Locating Route...' : 'Track Route'}
             </button>
           </form>
         </div>
@@ -207,6 +191,13 @@ const LocationTracker = () => {
         {/* Map Container */}
         <div className="w-full md:w-2/3 h-[400px] md:h-full relative">
           <div ref={mapRef} className="absolute inset-0 z-0 bg-gray-900" />
+          
+          {(loading || isAutoTracking) && (
+            <div className="absolute inset-0 z-10 bg-dark/50 flex flex-col items-center justify-center backdrop-blur-sm">
+                <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
+                <p className="text-white font-semibold text-lg drop-shadow-md">Calculating Route...</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
