@@ -64,8 +64,31 @@ const LocationTracker = () => {
 
   const geocodeAddress = async (address) => {
     try {
-      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
-      const data = await response.json();
+      let searchStr = address;
+      let response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchStr)}`);
+      let data = await response.json();
+      
+      // Fallback 1: If not found, try stripping the first part before comma (e.g., remove "Amma's Kitchen")
+      if ((!data || data.length === 0) && address.includes(',')) {
+        searchStr = address.substring(address.indexOf(',') + 1).trim();
+        response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchStr)}`);
+        data = await response.json();
+      }
+
+      // Fallback 2: Try appending the country if it still fails
+      if (!data || data.length === 0) {
+        response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchStr + ', India')}`);
+        data = await response.json();
+      }
+      
+      // Fallback 3: If it's a very long string, try just the last two words (often city and state/country)
+      if ((!data || data.length === 0) && searchStr.split(' ').length > 2) {
+          const words = searchStr.split(' ');
+          const shortStr = words.slice(-2).join(' ');
+          response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(shortStr)}`);
+          data = await response.json();
+      }
+
       if (data && data.length > 0) {
         return L.latLng(parseFloat(data[0].lat), parseFloat(data[0].lon));
       }
