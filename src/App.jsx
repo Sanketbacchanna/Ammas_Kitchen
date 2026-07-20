@@ -22,6 +22,7 @@ import CheesyNotification from './components/CheesyNotification';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminLogin from './pages/AdminLogin';
 import AdminSignup from './pages/AdminSignup';
+import LocationTracker from './pages/LocationTracker';
 
 // Protected Route Component (For regular users)
 const ProtectedRoute = ({ children }) => {
@@ -94,6 +95,14 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <Profile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="track"
+            element={
+              <ProtectedRoute>
+                <LocationTracker />
               </ProtectedRoute>
             }
           />

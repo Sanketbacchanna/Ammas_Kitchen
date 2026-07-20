@@ -47,7 +47,7 @@ const OrderSuccess = () => {
 
                 <div className="space-y-3">
                     <Link
-                        to="/profile"
+                        to="/track"
                         className="flex items-center justify-center gap-2 w-full bg-primary hover:bg-red-700 text-white font-semibold py-3 rounded-lg transition-colors"
                     >
                         <Package size={20} />
