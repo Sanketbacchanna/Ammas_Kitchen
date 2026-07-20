@@ -56,12 +56,14 @@ const Checkout = () => {
         // 4. Save delivery address for tracking
         localStorage.setItem('lastDeliveryAddress', formData.address);
 
-        // 5. Open WhatsApp in a new tab
-        window.open(whatsappUrl, '_blank');
-
-        // 6. Navigate to success page
+        // 5. Navigate to success page and pass whatsapp details
         clearCart();
-        navigate('/order-success', { state: { orderId: 'ORD-' + Math.floor(Math.random() * 1000000) } });
+        navigate('/order-success', { 
+            state: { 
+                orderId: 'ORD-' + Math.floor(Math.random() * 1000000),
+                whatsappUrl: whatsappUrl 
+            } 
+        });
     };
 
     if (cartItems.length === 0) {
