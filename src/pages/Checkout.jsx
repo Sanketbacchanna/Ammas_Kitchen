@@ -57,7 +57,6 @@ const Checkout = () => {
         localStorage.setItem('lastDeliveryAddress', formData.address);
 
         // 5. Navigate to success page and pass whatsapp details
-        clearCart();
         navigate('/order-success', { 
             state: { 
                 orderId: 'ORD-' + Math.floor(Math.random() * 1000000),

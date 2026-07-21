@@ -2,15 +2,24 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, Link, Navigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, Package, Home, MessageCircle, Clock, ChefHat, Truck } from 'lucide-react';
+import { useCart } from '../context/CartContext';
 
 const OrderSuccess = () => {
     const location = useLocation();
+    const { clearCart } = useCart();
     const orderId = location.state?.orderId || 'N/A';
     const whatsappUrl = location.state?.whatsappUrl;
 
     // States: 'redirecting', 'waiting', 'preparing', 'delivering'
     const [status, setStatus] = useState('redirecting');
     const [countdown, setCountdown] = useState(10);
+
+    // Clear cart on successful navigation
+    useEffect(() => {
+        if (location.state) {
+            clearCart();
+        }
+    }, [clearCart, location.state]);
 
     useEffect(() => {
         if (!whatsappUrl) return;
