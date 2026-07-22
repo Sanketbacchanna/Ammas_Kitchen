@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useCart } from '../context/CartContext';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -13,12 +13,88 @@ const Checkout = () => {
         address: '',
         paymentMethod: 'whatsapp'
     });
+    const [suggestions, setSuggestions] = useState([]);
+    const [showSuggestions, setShowSuggestions] = useState(false);
+    const [locating, setLocating] = useState(false);
+    const fetchController = useRef(null);
 
     const handleInputChange = (e) => {
         setFormData({
             ...formData,
             [e.target.name]: e.target.value
         });
+        if (e.target.name === 'address') {
+            setShowSuggestions(true);
+        }
+    };
+
+    // Simple debounce for address autocomplete
+    useEffect(() => {
+        const q = formData.address?.trim();
+        if (!q || q.length < 3) {
+            setSuggestions([]);
+            return;
+        }
+
+        const id = setTimeout(async () => {
+            try {
+                if (fetchController.current) fetchController.current.abort();
+                fetchController.current = new AbortController();
+                const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=6&q=${encodeURIComponent(q)}`;
+                const res = await fetch(url, { signal: fetchController.current.signal, headers: { 'Accept-Language': 'en' } });
+                if (!res.ok) return;
+                const data = await res.json();
+                setSuggestions(data || []);
+            } catch (err) {
+                if (err.name !== 'AbortError') console.warn('Address autocomplete error', err);
+            }
+        }, 400);
+
+        return () => {
+            clearTimeout(id);
+            if (fetchController.current) {
+                fetchController.current.abort();
+                fetchController.current = null;
+            }
+        };
+    }, [formData.address]);
+
+    const handleSelectSuggestion = (place) => {
+        const display = place.display_name || '';
+        setFormData(f => ({ ...f, address: display }));
+        setSuggestions([]);
+        setShowSuggestions(false);
+    };
+
+    const useCurrentLocation = () => {
+        if (!navigator.geolocation) {
+            alert('Geolocation is not supported by your browser');
+            return;
+        }
+        setLocating(true);
+        navigator.geolocation.getCurrentPosition(async (pos) => {
+            try {
+                const { latitude, longitude } = pos.coords;
+                const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`;
+                const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+                if (!res.ok) throw new Error('Reverse geocode failed');
+                const data = await res.json();
+                const display = data.display_name || '';
+                setFormData(f => ({ ...f, address: display }));
+                setSuggestions([]);
+                setShowSuggestions(false);
+                localStorage.setItem('lastDeliveryAddress', display);
+            } catch (err) {
+                console.warn(err);
+                alert('Unable to determine address from your location');
+            } finally {
+                setLocating(false);
+            }
+        }, (err) => {
+            console.warn(err);
+            alert('Unable to access your location');
+            setLocating(false);
+        }, { enableHighAccuracy: true, timeout: 10000 });
     };
 
     const handleWhatsAppOrder = (e) => {
@@ -160,15 +236,36 @@ const Checkout = () => {
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-400 mb-1">Delivery Address</label>
-                            <textarea
-                                name="address"
-                                required
-                                value={formData.address}
-                                onChange={handleInputChange}
-                                rows="3"
-                                className="w-full px-4 py-2 bg-dark border border-gray-700 rounded-lg text-white focus:outline-none focus:border-primary"
-                                placeholder="Flat No, Building, Street, Area"
-                            ></textarea>
+                            <div className="relative">
+                                <textarea
+                                    name="address"
+                                    required
+                                    value={formData.address}
+                                    onChange={handleInputChange}
+                                    rows="3"
+                                    className="w-full px-4 py-2 bg-dark border border-gray-700 rounded-lg text-white focus:outline-none focus:border-primary"
+                                    placeholder="Flat No, Building, Street, Area"
+                                ></textarea>
+
+                                <div className="flex gap-2 mt-2">
+                                    <button type="button" onClick={useCurrentLocation} className="inline-flex items-center gap-2 px-3 py-2 bg-gray-700 text-white rounded-md text-sm hover:bg-gray-600">
+                                        {locating ? 'Locating...' : 'Use current location'}
+                                    </button>
+                                    <button type="button" onClick={() => { setFormData(f => ({ ...f, address: '' })); setSuggestions([]); }} className="inline-flex items-center gap-2 px-3 py-2 bg-gray-700 text-white rounded-md text-sm hover:bg-gray-600">
+                                        Clear
+                                    </button>
+                                </div>
+
+                                {showSuggestions && suggestions && suggestions.length > 0 && (
+                                    <ul className="absolute z-20 left-0 right-0 mt-2 bg-dark border border-gray-700 rounded-md max-h-56 overflow-auto text-sm">
+                                        {suggestions.map((s) => (
+                                            <li key={s.place_id} onClick={() => handleSelectSuggestion(s)} className="px-3 py-2 hover:bg-gray-800 cursor-pointer text-gray-200">
+                                                {s.display_name}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </div>
                         </div>
 
                         <div className="pt-4">
