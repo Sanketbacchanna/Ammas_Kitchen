@@ -21,20 +21,24 @@ const OrderSuccess = () => {
         }
     }, [clearCart, location.state]);
 
+    const updateLocalOrderStatus = (newStatus) => {
+        const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+        const updatedOrders = orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o);
+        localStorage.setItem('orders', JSON.stringify(updatedOrders));
+        setStatus(newStatus);
+    };
+
+    // Countdown and initial redirect to WhatsApp
     useEffect(() => {
         if (!whatsappUrl) return;
 
         let timer;
-        
-        // 1. Redirecting to WhatsApp (5 seconds countdown)
         if (status === 'redirecting') {
             timer = setInterval(() => {
                 setCountdown((prev) => {
                     if (prev <= 1) {
                         clearInterval(timer);
-                        // Open WhatsApp
                         window.open(whatsappUrl, '_blank');
-                        // Change status to waiting for admin
                         setStatus('waiting');
                         return 0;
                     }
@@ -42,28 +46,40 @@ const OrderSuccess = () => {
                 });
             }, 1000);
         }
-        
-        // 2. Waiting for Admin Response (simulated 10 seconds)
-        else if (status === 'waiting') {
-            timer = setTimeout(() => {
-                setStatus('preparing');
-            }, 10000);
-        }
-        
-        // 3. Preparing Food (10-15 mins)
-        else if (status === 'preparing') {
-            timer = setTimeout(() => {
-                setStatus('delivering');
-            }, 10 * 60 * 1000);
-        }
 
         return () => {
-            if (timer) {
-                clearInterval(timer);
-                clearTimeout(timer);
-            }
+            if (timer) clearInterval(timer);
         };
     }, [status, whatsappUrl]);
+
+    // Poll/Listen for localStorage updates to order status
+    useEffect(() => {
+        if (status === 'redirecting' || orderId === 'N/A') return;
+
+        const checkOrderStatus = () => {
+            const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+            const currentOrder = orders.find(o => o.id === orderId);
+            if (currentOrder && currentOrder.status !== status) {
+                setStatus(currentOrder.status);
+            }
+        };
+
+        checkOrderStatus();
+
+        const handleStorageChange = (e) => {
+            if (e.key === 'orders') {
+                checkOrderStatus();
+            }
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+        const interval = setInterval(checkOrderStatus, 1000);
+
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+            clearInterval(interval);
+        };
+    }, [status, orderId]);
 
     if (!location.state) {
         return <Navigate to="/" />;
@@ -110,7 +126,7 @@ const OrderSuccess = () => {
                         <p className="text-gray-400 mb-6">
                             Please wait while the restaurant confirms your order. (Simulating admin response...)
                         </p>
-                        <button onClick={() => setStatus('preparing')} className="mt-2 px-3 py-1 bg-gray-800 text-xs text-gray-400 hover:text-white rounded-md transition-colors">Skip Admin Wait (Dev Mode)</button>
+                        <button onClick={() => updateLocalOrderStatus('preparing')} className="mt-2 px-3 py-1 bg-gray-800 text-xs text-gray-400 hover:text-white rounded-md transition-colors">Skip Admin Wait (Dev Mode)</button>
                     </motion.div>
                 );
             case 'preparing':
@@ -133,7 +149,7 @@ const OrderSuccess = () => {
                             The admin accepted your order. Our chefs are cooking your delicious food.
                             Wait time: 10-15 minutes.
                         </p>
-                        <button onClick={() => setStatus('delivering')} className="mt-2 px-3 py-1 bg-gray-800 text-xs text-gray-400 hover:text-white rounded-md transition-colors">Skip Cooking Time (Dev Mode)</button>
+                        <button onClick={() => updateLocalOrderStatus('delivering')} className="mt-2 px-3 py-1 bg-gray-800 text-xs text-gray-400 hover:text-white rounded-md transition-colors">Skip Cooking Time (Dev Mode)</button>
                     </motion.div>
                 );
             case 'delivering':

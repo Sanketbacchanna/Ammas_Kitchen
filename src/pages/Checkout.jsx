@@ -53,13 +53,35 @@ const Checkout = () => {
         // 3. Create WhatsApp URL
         const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;
 
-        // 4. Save delivery address for tracking
+        const orderId = 'ORD-' + Math.floor(Math.random() * 1000000);
+
+        // 4. Save order to orders history and current order tracking
+        const newOrder = {
+            id: orderId,
+            date: new Date().toISOString(),
+            status: 'waiting',
+            items: cartItems.map(item => ({
+                id: item.id,
+                name: item.name,
+                price: item.price,
+                quantity: item.quantity
+            })),
+            total: getFinalTotal(),
+            paymentMethod: formData.paymentMethod,
+            customerName: formData.name,
+            customerPhone: formData.phone,
+            deliveryAddress: formData.address
+        };
+
+        const existingOrders = JSON.parse(localStorage.getItem('orders') || '[]');
+        existingOrders.push(newOrder);
+        localStorage.setItem('orders', JSON.stringify(existingOrders));
         localStorage.setItem('lastDeliveryAddress', formData.address);
 
         // 5. Navigate to success page and pass whatsapp details
         navigate('/order-success', {
             state: {
-                orderId: 'ORD-' + Math.floor(Math.random() * 1000000),
+                orderId: orderId,
                 whatsappUrl: whatsappUrl
             }
         });

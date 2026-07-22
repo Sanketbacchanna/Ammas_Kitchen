@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useMenu } from '../context/MenuContext';
-import { Plus, Edit, Trash2, X, Save } from 'lucide-react';
+import { Plus, Edit, Trash2, X, Save, ShoppingBag, Check, Truck, ChefHat, Clock, Phone, MapPin, User } from 'lucide-react';
 
 const AdminDashboard = () => {
     const { menuItems, menuCategories, addMenuItem, updateMenuItem, deleteMenuItem } = useMenu();
@@ -15,6 +15,26 @@ const AdminDashboard = () => {
         }
         return saved;
     });
+
+    const [orders, setOrders] = useState(() => JSON.parse(localStorage.getItem('orders') || '[]'));
+
+    useEffect(() => {
+        const handleStorage = () => {
+            setOrders(JSON.parse(localStorage.getItem('orders') || '[]'));
+        };
+        window.addEventListener('storage', handleStorage);
+        const interval = setInterval(handleStorage, 2000); // Poll as backup
+        return () => {
+            window.removeEventListener('storage', handleStorage);
+            clearInterval(interval);
+        };
+    }, []);
+
+    const handleUpdateOrderStatus = (orderId, newStatus) => {
+        const updatedOrders = orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o);
+        localStorage.setItem('orders', JSON.stringify(updatedOrders));
+        setOrders(updatedOrders);
+    };
 
     // Initial state for new item
     const initialItemState = {
@@ -110,6 +130,113 @@ const AdminDashboard = () => {
                             <Save size={20} /> Save Address
                         </button>
                     </div>
+                </div>
+
+                {/* Customer Orders */}
+                <div className="bg-white p-6 rounded-xl shadow-md mb-8 border border-gray-200">
+                    <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                        <ShoppingBag className="text-primary" /> Customer Orders
+                    </h2>
+                    
+                    {orders.length === 0 ? (
+                        <p className="text-gray-500 text-center py-6">No orders placed yet.</p>
+                    ) : (
+                        <div className="space-y-6">
+                            {orders.slice().reverse().map((order) => (
+                                <div key={order.id} className="border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow bg-gray-50">
+                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-200 pb-4 mb-4">
+                                        <div>
+                                            <div className="flex items-center gap-3">
+                                                <span className="font-bold text-lg text-gray-900">Order {order.id}</span>
+                                                <span className={`px-3 py-1 rounded-full text-xs font-semibold uppercase ${
+                                                    order.status === 'waiting' ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' :
+                                                    order.status === 'preparing' ? 'bg-orange-100 text-orange-800 border border-orange-200' :
+                                                    order.status === 'delivering' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
+                                                    order.status === 'delivered' ? 'bg-green-100 text-green-800 border border-green-200' :
+                                                    'bg-gray-100 text-gray-800'
+                                                }`}>
+                                                    {order.status === 'waiting' ? 'Waiting for Admin' : order.status}
+                                                </span>
+                                            </div>
+                                            <p className="text-xs text-gray-500 mt-1">
+                                                {new Date(order.date).toLocaleString('en-IN')}
+                                            </p>
+                                        </div>
+                                        
+                                        <div className="flex flex-wrap gap-2">
+                                            {order.status === 'waiting' && (
+                                                <>
+                                                    <button
+                                                        onClick={() => handleUpdateOrderStatus(order.id, 'preparing')}
+                                                        className="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors cursor-pointer"
+                                                    >
+                                                        <ChefHat size={16} /> Accept & Cook
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleUpdateOrderStatus(order.id, 'cancelled')}
+                                                        className="flex items-center gap-1.5 bg-red-100 hover:bg-red-200 text-red-700 px-4 py-2 rounded-lg text-sm font-semibold transition-colors cursor-pointer"
+                                                    >
+                                                        <X size={16} /> Reject
+                                                    </button>
+                                                </>
+                                            )}
+                                            {order.status === 'preparing' && (
+                                                <button
+                                                    onClick={() => handleUpdateOrderStatus(order.id, 'delivering')}
+                                                    className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors cursor-pointer"
+                                                >
+                                                    <Truck size={16} /> Ship for Delivery
+                                                </button>
+                                            )}
+                                            {order.status === 'delivering' && (
+                                                <button
+                                                    onClick={() => handleUpdateOrderStatus(order.id, 'delivered')}
+                                                    className="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors cursor-pointer"
+                                                >
+                                                    <Check size={16} /> Mark Delivered
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        {/* Customer Info */}
+                                        <div className="space-y-2 text-sm text-gray-700">
+                                            <div className="flex items-center gap-2">
+                                                <User size={16} className="text-gray-400" />
+                                                <span className="font-semibold">{order.customerName}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <Phone size={16} className="text-gray-400" />
+                                                <span>{order.customerPhone}</span>
+                                            </div>
+                                            <div className="flex items-start gap-2">
+                                                <MapPin size={16} className="text-gray-400 mt-0.5 flex-shrink-0" />
+                                                <span>{order.deliveryAddress}</span>
+                                            </div>
+                                        </div>
+                                        
+                                        {/* Order Items */}
+                                        <div className="border-t md:border-t-0 md:border-l border-gray-200 pt-4 md:pt-0 md:pl-6">
+                                            <h4 className="font-semibold text-gray-800 text-sm mb-2">Items Ordered:</h4>
+                                            <div className="space-y-1.5 mb-3">
+                                                {order.items.map((item) => (
+                                                    <div key={item.id} className="flex justify-between text-sm text-gray-600">
+                                                        <span>{item.name} x {item.quantity}</span>
+                                                        <span>₹{item.price * item.quantity}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <div className="border-t border-gray-200 pt-2 flex justify-between font-bold text-gray-900">
+                                                <span>Total:</span>
+                                                <span className="text-primary">₹{order.total}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
 
                 {/* Form Modal (simplified as in-page for now) */}
