@@ -7,7 +7,7 @@ const Footer = () => {
     const { isInstalled, isIOS, deferredPrompt } = useInstall();
 
     return (
-        <footer className="bg-dark text-gray-300 py-8 border-t border-gray-800">
+        <footer className="sticky bottom-0 z-40 bg-dark text-gray-300 py-8 border-t border-gray-800">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex flex-col md:flex-row justify-between items-center">
                     <div className="mb-4 md:mb-0">
