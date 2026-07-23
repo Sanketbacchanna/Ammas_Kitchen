@@ -202,14 +202,14 @@ const OrderSuccess = () => {
                         <div className="space-y-3">
                             <Link
                                 to="/track"
-                                className="flex items-center justify-center gap-2 w-full bg-primary hover:bg-red-700 text-white font-semibold py-3 rounded-lg transition-colors shadow-lg shadow-primary/30"
+                                className="flex items-center justify-center gap-2 w-full bg-primary hover:bg-red-700 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-300 shadow-lg shadow-primary/30 cursor-pointer hover:shadow-xl hover:shadow-primary/50 active:scale-95 pointer-events-auto"
                             >
                                 <Package size={20} />
                                 Track Order Live
                             </Link>
                             <Link
                                 to="/"
-                                className="flex items-center justify-center gap-2 w-full bg-dark hover:bg-gray-800 text-gray-300 font-semibold py-3 rounded-lg transition-colors border border-gray-700"
+                                className="flex items-center justify-center gap-2 w-full bg-dark hover:bg-gray-700 text-gray-300 hover:text-white font-semibold py-3 px-4 rounded-lg transition-all duration-300 border border-gray-700 hover:border-gray-600 cursor-pointer active:scale-95 pointer-events-auto"
                             >
                                 <Home size={20} />
                                 Back to Home
