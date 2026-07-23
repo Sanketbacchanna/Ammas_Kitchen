@@ -7,15 +7,16 @@ const Footer = () => {
     const { isInstalled, isIOS, deferredPrompt } = useInstall();
 
     return (
-        <footer className="sticky bottom-0 z-40 bg-dark text-gray-300 py-8 border-t border-gray-800">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex flex-col md:flex-row justify-between items-center">
+        <footer className="sticky bottom-0 z-40 bg-dark text-gray-300 border-t border-gray-800">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-24 flex items-center">
+                <div className="flex flex-col md:flex-row justify-between items-center w-full">
                     <div className="mb-4 md:mb-0">
                         <div>
                             <h3 className="text-xl font-bold text-secondary mb-2 font-serif">Amma's Kitchen</h3>
                             <p className="text-sm text-gray-400">Pure Vegetarian Delights</p>
                             <p className="text-sm text-gray-400 mt-1">📞 9353350845</p>
-                        </div>            </div>
+                        </div>
+                    </div>
 
                     <div className="flex space-x-6 mb-4 md:mb-0">
                         <a href="#" className="hover:text-secondary transition-colors"><Facebook size={20} /></a>
